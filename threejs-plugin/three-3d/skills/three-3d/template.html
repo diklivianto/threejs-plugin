@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adegan 3D</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #eef2f5; font-family: system-ui, sans-serif; }
+  #info { position: fixed; top: 12px; left: 12px; background: rgba(255,255,255,.9); padding: 10px 14px;
+          border-radius: 10px; font-size: 13px; line-height: 1.4; max-width: 280px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  #info h1 { font-size: 15px; margin: 0 0 4px; }
+  .label { background: rgba(20,30,40,.8); color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 12px; white-space: nowrap; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="info">
+  <h1>Judul Adegan</h1>
+  Seret untuk memutar · gulir/cubit untuk zoom · klik kanan/dua jari untuk geser
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Renderer, adegan, kamera
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(innerWidth, innerHeight);
+Object.assign(labelRenderer.domElement.style, { position: 'fixed', top: '0', pointerEvents: 'none' });
+document.body.appendChild(labelRenderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#eef2f5');
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 100);
+camera.position.set(4, 3, 5);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, 0.8, 0);
+controls.autoRotate = !reduceMotion;
+controls.autoRotateSpeed = 0.6;
+controls.addEventListener('start', () => (controls.autoRotate = false));
+
+// Cahaya
+scene.add(new THREE.HemisphereLight('#ffffff', '#b0b8c0', 1.2));
+const sun = new THREE.DirectionalLight('#ffffff', 2);
+sun.position.set(5, 8, 4);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6 });
+scene.add(sun);
+
+// Lantai
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ color: '#dfe5ea', roughness: 0.9 }));
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+// Utilitas
+function mesh(geometry, color, opts = {}) {
+  const m = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color, roughness: 0.6, ...opts }));
+  m.castShadow = m.receiveShadow = true;
+  return m;
+}
+function label(text, parent, y = 0.3) {
+  const div = document.createElement('div');
+  div.className = 'label';
+  div.textContent = text;
+  const obj = new CSS2DObject(div);
+  obj.position.set(0, y, 0);
+  parent.add(obj);
+}
+
+// === ADEGAN === (ganti bagian ini)
+const contoh = new THREE.Group();
+contoh.name = 'contoh';
+const alas = mesh(new THREE.BoxGeometry(1.2, 0.1, 1.2), '#4a7c9b');
+alas.position.y = 0.05;
+const kubus = mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), '#e07a5f');
+kubus.position.y = 0.5;
+contoh.add(alas, kubus);
+label('Contoh objek', kubus, 0.5);
+scene.add(contoh);
+// === AKHIR ADEGAN ===
+
+// Loop
+const clock = new THREE.Clock();
+function animate() {
+  const dt = clock.getDelta();
+  if (!reduceMotion) kubus.rotation.y += dt * 0.5;
+  controls.update();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+renderer.setAnimationLoop(animate);
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  labelRenderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
