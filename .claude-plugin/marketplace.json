@@ -1,1 +1,11 @@
-
+{
+  "name": "threejs-lokal",
+  "owner": { "name": "dr. Diklivianto Karunia" },
+  "plugins": [
+    {
+      "name": "three-3d",
+      "source": "./threejs-plugin/three-3d",
+      "description": "Membuat adegan 3D interaktif di browser dengan Three.js"
+    }
+  ]
+}
